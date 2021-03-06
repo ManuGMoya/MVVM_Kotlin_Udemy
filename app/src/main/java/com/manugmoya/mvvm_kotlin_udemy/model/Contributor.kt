@@ -17,8 +17,8 @@ data class Contributor(
 
     @field:SerializedName("login")
     val login: String,
-    @field:SerializedName("contribution")
-    val contribution: Int,
+    @field:SerializedName("contributions")
+    val contributions: Int,
     @field:SerializedName("avatar_url")
     val avatarUrl: String
 ) {
