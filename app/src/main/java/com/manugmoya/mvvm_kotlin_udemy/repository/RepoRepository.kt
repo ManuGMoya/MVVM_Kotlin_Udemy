@@ -70,8 +70,8 @@ class RepoRepository @Inject constructor(
         }.asLiveData()
     }
 
-    fun loadContributors(owner: String, name: String): LiveData<Resource<List<Contributor>>>{
-        return object: NetworkBoundResource<List<Contributor>,List<Contributor>>(appExecutors){
+    fun loadContributors(owner: String, name: String): LiveData<Resource<List<Contributor>>> {
+        return object : NetworkBoundResource<List<Contributor>, List<Contributor>>(appExecutors) {
 
             override fun saveCallResult(item: List<Contributor>) {
                 item.forEach {
@@ -106,6 +106,17 @@ class RepoRepository @Inject constructor(
             }
 
         }.asLiveData()
+    }
+
+    fun searchNextPage(query: String): LiveData<Resource<Boolean>> {
+        val fetchNextSearchPageTask = FetchNextSearchPageTask(
+            query = query,
+            githubApi = githubApi,
+            db = db
+        )
+
+        appExecutors.networkIO().execute(fetchNextSearchPageTask)
+        return fetchNextSearchPageTask.liveData
     }
 
 }
