@@ -90,7 +90,6 @@ abstract class NetworkBoundResource<ResultType, RequestType>
     @WorkerThread
     protected abstract fun saveCallResult(item: RequestType)
 
-
     @MainThread
     protected abstract fun shouldFetch(data: ResultType?): Boolean
 
