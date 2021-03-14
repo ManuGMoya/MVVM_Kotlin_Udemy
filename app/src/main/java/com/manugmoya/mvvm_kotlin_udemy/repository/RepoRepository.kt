@@ -6,6 +6,7 @@ import com.manugmoya.mvvm_kotlin_udemy.api.ApiResponse
 import com.manugmoya.mvvm_kotlin_udemy.api.GithubApi
 import com.manugmoya.mvvm_kotlin_udemy.db.GithubDB
 import com.manugmoya.mvvm_kotlin_udemy.db.RepoDao
+import com.manugmoya.mvvm_kotlin_udemy.model.Contributor
 import com.manugmoya.mvvm_kotlin_udemy.model.Repo
 import com.manugmoya.mvvm_kotlin_udemy.utils.RateLimiter
 import java.util.concurrent.TimeUnit
@@ -64,6 +65,44 @@ class RepoRepository @Inject constructor(
 
             override fun createCall(): LiveData<ApiResponse<Repo>> {
                 return githubApi.getRepo(owner = owner, name = name)
+            }
+
+        }.asLiveData()
+    }
+
+    fun loadContributors(owner: String, name: String): LiveData<Resource<List<Contributor>>>{
+        return object: NetworkBoundResource<List<Contributor>,List<Contributor>>(appExecutors){
+
+            override fun saveCallResult(item: List<Contributor>) {
+                item.forEach {
+                    it.repoName = name
+                    it.repoOwner = owner
+                }
+                db.runInTransaction {
+                    repoDao.createRepoIfNotExists(
+                        Repo(
+                            id = Repo.UNKOWN_ID,
+                            name = name,
+                            fullName = "$owner/$name",
+                            description = "",
+                            owner = Repo.Owner(owner, null),
+                            stars = 0
+                        )
+                    )
+                    repoDao.insertContributors(item)
+                }
+            }
+
+            override fun shouldFetch(data: List<Contributor>?): Boolean {
+                return data == null || data.isEmpty()
+            }
+
+            override fun loadFromDb(): LiveData<List<Contributor>> {
+                return repoDao.loadContributors(owner = owner, name = name)
+            }
+
+            override fun createCall(): LiveData<ApiResponse<List<Contributor>>> {
+                return githubApi.getContributors(owner = owner, name = name)
             }
 
         }.asLiveData()
