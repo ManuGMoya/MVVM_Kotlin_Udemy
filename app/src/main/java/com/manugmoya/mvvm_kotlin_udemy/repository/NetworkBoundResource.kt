@@ -23,7 +23,7 @@ abstract class NetworkBoundResource<ResultType, RequestType>
                 fetchFromNetwork(dbSource)
             } else {
                 result.addSource(dbSource) { newData ->
-                    setValue(Resource.sucess(newData))
+                    setValue(Resource.success(newData))
                 }
             }
         }
@@ -50,7 +50,7 @@ abstract class NetworkBoundResource<ResultType, RequestType>
                         saveCallResult(processResponse(response))
                         appExecutors.mainThread().execute {
                             result.addSource(loadFromDb()) { newData ->
-                                setValue(Resource.sucess(newData))
+                                setValue(Resource.success(newData))
 
                             }
                         }
@@ -59,7 +59,7 @@ abstract class NetworkBoundResource<ResultType, RequestType>
                 is ApiEmptyResponse -> {
                     appExecutors.mainThread().execute {
                         result.addSource(loadFromDb()) { newData ->
-                            setValue(Resource.sucess(newData))
+                            setValue(Resource.success(newData))
                         }
                     }
                 }
