@@ -8,7 +8,7 @@ import com.manugmoya.mvvm_kotlin_udemy.db.GithubTypeConverters
 @TypeConverters(GithubTypeConverters::class)
 class RepoSearchResult(
     val query: String,
-    val reporIds: List<Int>,
+    val repoIds: List<Int>,
     val totalCount: Int,
     val next: Int?
 )

@@ -36,7 +36,7 @@ class FetchNextSearchPageTask constructor(
             when (apiResponse) {
                 is ApiSuccessResponse -> {
                     val ids = arrayListOf<Int>()
-                    ids.addAll(current.reporIds)
+                    ids.addAll(current.repoIds)
                     ids.addAll(apiResponse.body.items.map { it.id })
                     val merged =
                         RepoSearchResult(query, ids, apiResponse.body.total, apiResponse.nextPage)

@@ -1,13 +1,18 @@
 package com.manugmoya.mvvm_kotlin_udemy.repository
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.Transformations
 import com.manugmoya.mvvm_kotlin_udemy.AppExecutors
 import com.manugmoya.mvvm_kotlin_udemy.api.ApiResponse
+import com.manugmoya.mvvm_kotlin_udemy.api.ApiSuccessResponse
 import com.manugmoya.mvvm_kotlin_udemy.api.GithubApi
 import com.manugmoya.mvvm_kotlin_udemy.db.GithubDB
 import com.manugmoya.mvvm_kotlin_udemy.db.RepoDao
 import com.manugmoya.mvvm_kotlin_udemy.model.Contributor
 import com.manugmoya.mvvm_kotlin_udemy.model.Repo
+import com.manugmoya.mvvm_kotlin_udemy.model.RepoSearchResponse
+import com.manugmoya.mvvm_kotlin_udemy.model.RepoSearchResult
+import com.manugmoya.mvvm_kotlin_udemy.utils.AbsentLiveData
 import com.manugmoya.mvvm_kotlin_udemy.utils.RateLimiter
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -117,6 +122,51 @@ class RepoRepository @Inject constructor(
 
         appExecutors.networkIO().execute(fetchNextSearchPageTask)
         return fetchNextSearchPageTask.liveData
+    }
+
+    fun search(query: String): LiveData<Resource<List<Repo>>>{
+        return object : NetworkBoundResource<List<Repo>, RepoSearchResponse>(appExecutors){
+
+            override fun saveCallResult(item: RepoSearchResponse) {
+                val reposId = item.items.map {
+                    it.id
+                }
+                val repoSearchResult = RepoSearchResult(
+                    query = query,
+                    repoIds = reposId,
+                    totalCount = item.total,
+                    next = item.nextPage
+                )
+                db.beginTransaction()
+                try {
+                    repoDao.insertRepos(item.items)
+                    repoDao.insert(repoSearchResult)
+                } finally {
+                    db.endTransaction()
+                }
+            }
+
+            override fun shouldFetch(data: List<Repo>?): Boolean = data == null
+
+            override fun loadFromDb(): LiveData<List<Repo>> {
+                return Transformations.switchMap(repoDao.search(query)) { searchData ->
+                    if (searchData == null) {
+                        AbsentLiveData.create()
+                    } else {
+                        repoDao.loadOrdered(searchData.repoIds)
+                    }
+                }
+            }
+
+            override fun createCall(): LiveData<ApiResponse<RepoSearchResponse>> = githubApi.searchRepos(query)
+
+            override fun processResponse(response: ApiSuccessResponse<RepoSearchResponse>): RepoSearchResponse {
+                val body = response.body
+                body.nextPage = response.nextPage
+                return body
+            }
+
+        }.asLiveData()
     }
 
 }
